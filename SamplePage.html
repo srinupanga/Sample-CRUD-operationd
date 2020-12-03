@@ -1,0 +1,269 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <title>Simple CRUD Operations</title>
+    <style>
+        .table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > th, .table-bordered > thead > tr > td, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > td {
+    border: 1px solid #ddd;
+    border-collapse: collapse !important;
+}
+        .table > thead > tr > th {
+    padding: 0px 5px !important;
+    vertical-align: middle;
+}
+        .modal-dialog {
+    width: 400px;
+}
+        .modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 50%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js">
+    </script> 
+    <script>
+        $(document).ready(function () {
+            sessionStorage.setItem("userID", 0);
+            GetUserDetails();
+            $('#tblallChk').on('change', function () {
+                if ($(this).is(":checked")) {
+                    $("#tblUserDetails tbody tr").each(function (i, e) {
+                        $('#allChk' + i).prop('checked', true);
+                        //$(e).find('input[id="allChk"]').attr('checked', true);
+                    });
+                }
+                else {
+                    $("#tblUserDetails tbody tr").each(function (i, e) {
+                        $('#allChk' + i).prop('checked', false);
+                        //$(e).find('input[id="allChk"]').attr('checked', true);
+                    });
+}
+            });
+        });
+        function GetUserDetails() {
+            $.ajax({
+                async: false,
+                datatype: "json",
+                Type: "Get",
+                cache: false,
+                url: "http://localhost:54664/api/Sample?Id=0",
+                success: function (data) {
+                    console.log(data);
+                    $('#tbdyUserDetails').empty();
+                    var tblData = "";
+                    for (var i = 0; i < data.length; i++) {
+                        tblData += "<tr><td><input type='checkbox' id='allChk" + i + "' /></td><td id='tdusrId'>" + data[i].USERID + "</td><td id='tdUsrName'>" + data[i].USERNAME + "</td><td id='tdemail'>" + data[i].EMAIL + "</td></tr>";
+                    }
+                    $('#tbdyUserDetails').append(tblData);
+                }
+            });
+        }
+        
+        function AddUser() {
+            var userId = document.getElementById("txtUserId").value;
+            var userName = document.getElementById("txtUserName").value;
+            var email = document.getElementById("txtEmail").value;
+            var isUpdate = 0;
+            if (sessionStorage.getItem("userID") != 0 && sessionStorage.getItem("userID") != null)
+                isUpdate = 1;
+            if (userId != "" && userName != "" && email!="") {
+                $.ajax({
+                    async: false,
+                    datatype: "json",
+                    Type: "Get",
+                    cache: false,
+                    url: "http://localhost:54664/api/Sample?userId=" + userId + "&username=" + userName + "&email=" + email + "&isUpdate=" + isUpdate,
+                    success: function (data) {
+                        console.log(data);
+                        if (data == 1 || data > 0) {
+                            if (sessionStorage.getItem("userID") != 0 && sessionStorage.getItem("userID") != null)
+                                alert("Details Updated Successfully");
+                            else
+                                alert("Details Added Successfully");
+
+                            sessionStorage.setItem("userID", 0);
+                            GetUserDetails();
+                        }
+                        else
+                            alert("Faield to Added Details");
+                    }
+                });
+                document.getElementById("txtUserId").value="";
+                document.getElementById("txtUserName").value = "";
+                document.getElementById("txtEmail").value = "";
+                var modal = document.getElementById("myModal");
+                modal.style.display = "none";
+            }
+            else {
+                alert("Enter all fields");
+            }
+        }
+        function ShowModal() {
+            var modal = document.getElementById("myModal");
+            modal.style.display = "block";
+        }
+        function CloseModal() {
+            var modal = document.getElementById("myModal");
+            modal.style.display = "none";
+        }
+        
+        function EditUser() {
+            var count = 0;
+            $("#tblUserDetails tbody tr").each(function (i, e) {
+                if ($('#allChk' + i).prop('checked')==true) {
+                    count++;
+}
+            });
+            if (count == 1) {
+                var userId = ""; var userName = ""; var email = "";
+                $("#tblUserDetails tbody tr").each(function (i, e) {
+                    if ($('#allChk' + i).prop('checked') == true) {
+                        userId = $(e).find('#tdusrId').html();
+                        userName = $(e).find('#tdUsrName').html();
+                        email = $(e).find('#tdemail').html();
+                    }
+                });
+                document.getElementById("txtUserId").value = userId;
+                document.getElementById("txtUserName").value = userName;
+                document.getElementById("txtEmail").value = email;
+                $("#txtUserId").attr("disabled", "disabled");
+                var modal = document.getElementById("myModal");
+                modal.style.display = "block";
+                sessionStorage.setItem("userID", userId);
+            }
+            else if(count>1){
+                alert("Select only one record");
+            }
+            else {
+                alert("Please Select Record");
+}
+        }
+        function DeleteUsers() {
+            var count = 0;
+            $("#tblUserDetails tbody tr").each(function (i, e) {
+                if ($('#allChk' + i).prop('checked') == true) {
+                    count++;
+                }
+            });
+            if(count>0){
+                var deleteIds = "";
+                $("#tblUserDetails tbody tr").each(function (i, e) {
+                    if ($('#allChk' + i).prop('checked') == true) {
+                        deleteIds = $(e).find('#tdusrId').html();
+                        $.ajax({
+                            async: false,
+                            datatype: "json",
+                            Type: "Get",
+                            cache: false,
+                            url: "http://localhost:54664/api/Sample?deleteId=" + deleteIds,
+                            success: function (data) {
+                                console.log(data);
+                                if (data == 1 || data > 0) {
+                                    alert("User Deleted Successfully");
+                                }
+                                else
+                                    alert("Faield to Added Details");
+                            }
+                        });
+                    }
+                });
+                GetUserDetails();
+            }
+            else {
+                alert("Please Select delete Record");
+}
+}
+        
+    </script>
+</head>
+<body>
+    <div>
+        <!--<button id="btnSubmit" onclick="GetUserDetails()">Get</button>-->
+        <button id="btnShowModal" onclick="ShowModal()">Add</button>
+        <button id="btnDelete" onclick="EditUser()">Edit</button>
+        <button id="btnDelete" onclick="DeleteUsers()">Delete</button>
+    </div>
+    <table class="table table-bordered" id="tblUserDetails">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="tblallChk" /></th>
+                <th>User Id</th>
+                <th>User Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody id="tbdyUserDetails">
+
+        </tbody>
+
+    </table>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <h4 class="modal-title">Add User Details</h4>
+                <span class="close" onclick="CloseModal()">&times;</span>
+                <table>
+                    <tr>
+                        <td>User Id</td>
+                        <td>User Name</td>
+                        <td>Email</td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" id="txtUserId" /></td>
+                        <td><input type="text" id="txtUserName" /></td>
+                        <td><input type="text" id="txtEmail" /></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td style="text-align: end;"><button id="btnAddUser" onclick="AddUser()">Submit</button></td>
+                    </tr>
+                </table>
+</div>
+
+    </div>
+</body>
+</html>
